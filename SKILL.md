@@ -44,8 +44,8 @@ If neither pattern matches, **ask the user which type it is** before proceeding.
   - Exists and still has template placeholders → fill in only the missing/placeholder fields, keep everything else.
   - Exists and is fully configured → leave it untouched, tell the user it's already configured.
   - Doesn't exist → create from the template.
-- Same for scripts (`scripts/*`): if a script already exists, diff against the template; only rewrite when missing or genuinely broken, and say so.
-- **Language mismatch**: if the existing scripts' language (JS vs TS) differs from the project's language, do NOT migrate on your own — a working script is never "broken". Only migrate when the user explicitly asks (e.g. "换成 ts 脚本"): replace the scripts with the matching variant, update the npm scripts accordingly (`node scripts/upload.js` → `tsx scripts/upload.ts`), install `tsx` if switching to TS, and re-run an upload/preview to verify.
+- Same for scripts (`mini-scripts/*`): if a script already exists, diff against the template; only rewrite when missing or genuinely broken, and say so.
+- **Language mismatch**: if the existing scripts' language (JS vs TS) differs from the project's language, do NOT migrate on your own — a working script is never "broken". Only migrate when the user explicitly asks (e.g. "换成 ts 脚本"): replace the scripts with the matching variant, update the npm scripts accordingly (`node mini-scripts/upload.js` → `tsx mini-scripts/upload.ts`), install `tsx` if switching to TS, and re-run an upload/preview to verify.
 - Same for `package.json` `scripts`: only add entries that are missing; never modify or delete existing ones. **Name collisions**: if `upload` / `preview` (or an `upload:mp-*` slot) is already taken by an unrelated script, don't overwrite it — use a suffixed name instead (e.g. `upload:mp` / `preview:mp` for native projects) and tell the user; 执行模式 must look up whatever names were actually registered.
 - At the end of initialization, summarize what was created vs. what was kept as-is.
 
@@ -84,7 +84,7 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
      ```bash
      npm i -D miniprogram-ci tsx
      ```
-   - **JavaScript project, `"type": "module"`** — the CJS-style `.js` templates would break (no `require`); copy the JS templates but rename them to `.cjs` (`scripts/ci-project.cjs`, `scripts/upload.cjs`, `scripts/preview.cjs`) and point the npm scripts at the `.cjs` files.
+   - **JavaScript project, `"type": "module"`** — the CJS-style `.js` templates would break (no `require`); copy the JS templates but rename them to `.cjs` (`mini-scripts/ci-project.cjs`, `mini-scripts/upload.cjs`, `mini-scripts/preview.cjs`) and point the npm scripts at the `.cjs` files.
    - **JavaScript project, CommonJS (default)** — use `templates/mp-ci/` as-is:
      ```bash
      npm i -D miniprogram-ci
@@ -98,10 +98,10 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
 
 3. **Compiler plugins (TS / Less / Sass projects)**: `miniprogram-ci` does NOT auto-enable the `useCompilerPlugins` from `project.config.json` — it must be passed via the `setting` option. The generated scripts handle this automatically (they read `project.config.json` from `projectPath` or the project root and pass `useCompilerPlugins` through). Only if detection fails should you add an explicit `setting` to `ci.config.json`.
 
-4. **Generate the three scripts** into `<project>/scripts/` from the language-matched templates (step 1):
+4. **Generate the three scripts** into `<project>/mini-scripts/` from the language-matched templates (step 1):
    - TS variant: `ci-project.ts` / `upload.ts` / `preview.ts`, run with `tsx`.
    - JS variant: `ci-project.js` / `upload.js` / `preview.js`, run with `node` (or `.cjs` for ESM projects).
-   - `scripts/ci-project.*` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3). The TS variant uses `process.cwd()` as the project root (npm scripts always run from the root) instead of `import.meta.url`, so it type-checks cleanly under a mini-program tsconfig (`module: commonjs`) — no `import.meta` errors in the editor.
+   - `mini-scripts/ci-project.*` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3). The TS variant uses `process.cwd()` as the project root (npm scripts always run from the root) instead of `import.meta.url`, so it type-checks cleanly under a mini-program tsconfig (`module: commonjs`) — no `import.meta` errors in the editor.
    - `upload.*` — `[版本号] [备注]` args; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
    - `preview.*` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
 
@@ -113,12 +113,12 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
    ```json
    {
      "scripts": {
-       "upload": "node scripts/upload.js",
-       "preview": "node scripts/preview.js"
+       "upload": "node mini-scripts/upload.js",
+       "preview": "node mini-scripts/preview.js"
      }
    }
    ```
-   For the TS variant use `"upload": "tsx scripts/upload.ts"` / `"preview": "tsx scripts/preview.ts"`; for the ESM-JS variant use the `.cjs` file names.
+   For the TS variant use `"upload": "tsx mini-scripts/upload.ts"` / `"preview": "tsx mini-scripts/preview.ts"`; for the ESM-JS variant use the `.cjs` file names.
 
 7. **Tell the user the prerequisites** (they are one-time, manual):
    - 小程序后台「开发管理 → 开发工具」已开启代码上传；若开启了 IP 白名单，需把本机 IP 加入白名单。
@@ -175,7 +175,7 @@ After a successful run, report the result briefly (version uploaded / QR code pa
 ## Verification
 
 - For uni-app: after the user has placed the private key and filled `.minicirc`, suggest running e.g. `npm run upload:mp-weixin` to verify. Do not run it yourself if the key/config is not ready.
-- For native projects: run `npm run preview` (or `node scripts/preview.js`) to verify; it should produce a QR code under `qrcodes/`. The scripts exit with clear messages if `ci.config.json` or the private key is missing.
+- For native projects: run `npm run preview` (or `node mini-scripts/preview.js`) to verify; it should produce a QR code under `qrcodes/`. The scripts exit with clear messages if `ci.config.json` or the private key is missing.
 
 ## Notes
 

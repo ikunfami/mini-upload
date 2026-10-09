@@ -1,8 +1,8 @@
 // 上传小程序代码到微信后台（miniprogram-ci SDK 无头上传，无需开发者工具 / 服务端口）
-// 用法: tsx scripts/upload.ts [版本号] [备注]
-//   tsx scripts/upload.ts 1.2.3 修复已知问题   -> 版本 1.2.3，备注「修复已知问题」
-//   tsx scripts/upload.ts 修复已知问题          -> 版本取 ci.config.json 的 version，备注「修复已知问题」
-//   tsx scripts/upload.ts                       -> 版本/备注取 ci.config.json 中的配置
+// 用法: tsx mini-scripts/upload.ts [版本号] [备注]
+//   tsx mini-scripts/upload.ts 1.2.3 修复已知问题   -> 版本 1.2.3，备注「修复已知问题」
+//   tsx mini-scripts/upload.ts 修复已知问题          -> 版本取 ci.config.json 的 version，备注「修复已知问题」
+//   tsx mini-scripts/upload.ts                       -> 版本/备注取 ci.config.json 中的配置
 // 前置条件:
 //   1. ci.config.json 已配置 appid / privateKeyPath / projectPath
 //   2. 上传密钥已从 https://mp.weixin.qq.com/ 小程序后台下载并放到项目根目录

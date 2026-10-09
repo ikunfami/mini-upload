@@ -13,7 +13,7 @@ Mini-program CI upload skill for AI coding agents（小程序 CI 上传 Skill）
 | 项目类型 | 工具 | 说明 |
 |---|---|---|
 | uni-app 项目 | `uni-mini-ci` | 生成 `.minicirc` 配置 + `upload:mp-*` npm 脚本 |
-| 微信小程序原生项目 | `miniprogram-ci` | 生成 `ci.config.json` + 按项目语言（TS/JS/ESM）生成 `scripts/` 上传与预览脚本（SDK 无头上传） |
+| 微信小程序原生项目 | `miniprogram-ci` | 生成 `ci.config.json` + 按项目语言（TS/JS/ESM）生成 `mini-scripts/` 上传与预览脚本（SDK 无头上传） |
 
 **识别规则**
 
@@ -49,7 +49,7 @@ mini-upload/
     ├── mp-ci/                # 原生微信小程序 JS 模板（CommonJS）
     │   ├── ci.config.json    # miniprogram-ci 配置模板（appid / privateKeyPath / projectPath）
     │   ├── ci-project.js     # 共享辅助：加载配置并创建 miniprogram-ci Project 实例
-    │   ├── upload.js         # 上传脚本：node scripts/upload.js [版本号] [备注]
+    │   ├── upload.js         # 上传脚本：node mini-scripts/upload.js [版本号] [备注]
     │   └── preview.js        # 预览二维码脚本：输出到 qrcodes/，按时间戳命名
     └── mp-ci-ts/             # 原生微信小程序 TS 模板（tsx 运行，ESM 风格）
         ├── ci-project.ts
@@ -90,9 +90,9 @@ cp -r mini-upload ~/.agents/skills/
 
 | 项目情况 | 模板 | 依赖 | npm scripts |
 |---|---|---|---|
-| TypeScript 项目（含 `typescript` 依赖或 `tsconfig.json`） | `templates/mp-ci-ts/` | `npm i -D miniprogram-ci tsx` | `tsx scripts/upload.ts` / `tsx scripts/preview.ts` |
-| JS + `"type": "module"` | `templates/mp-ci/` 改名 `.cjs` | `npm i -D miniprogram-ci` | `node scripts/upload.cjs` |
-| JS CommonJS（默认） | `templates/mp-ci/` 原样 | `npm i -D miniprogram-ci` | `node scripts/upload.js` |
+| TypeScript 项目（含 `typescript` 依赖或 `tsconfig.json`） | `templates/mp-ci-ts/` | `npm i -D miniprogram-ci tsx` | `tsx mini-scripts/upload.ts` / `tsx mini-scripts/preview.ts` |
+| JS + `"type": "module"` | `templates/mp-ci/` 改名 `.cjs` | `npm i -D miniprogram-ci` | `node mini-scripts/upload.cjs` |
+| JS CommonJS（默认） | `templates/mp-ci/` 原样 | `npm i -D miniprogram-ci` | `node mini-scripts/upload.js` |
 
 **配置流程**：
 
@@ -100,7 +100,7 @@ cp -r mini-upload ~/.agents/skills/
    - `appid`：取自 `project.config.json`
    - `projectPath`：填 `"."`（项目根目录，即 `project.config.json` 所在处）。miniprogram-ci 会自动读取其中的 `miniprogramRoot`（代码目录）和 `useCompilerPlugins`（编译插件），不要填 `miniprogram/` 子目录——否则 TS 项目会报 `could not find pages/xxx/xxx.js`
    - `privateKeyPath`：先留占位，见第 3 步
-2. 按上表复制对应语言的三个脚本到项目 `scripts/` 目录
+2. 按上表复制对应语言的三个脚本到项目 `mini-scripts/` 目录
 3. 用户前往 https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传，下载上传密钥放入项目根目录，并修改 `ci.config.json` 的 `privateKeyPath`（密钥文件不要提交 git）
 4. 在 `package.json` 的 `scripts` 中合并对应语言的命令（上表）
 

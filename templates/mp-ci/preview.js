@@ -1,5 +1,5 @@
 // 生成体验版预览二维码（miniprogram-ci SDK，无需开发者工具 / 服务端口）
-// 用法: node scripts/preview.js
+// 用法: node mini-scripts/preview.js
 // 二维码统一输出到项目根目录 qrcodes/ 文件夹，按时间戳命名，历史记录互不覆盖
 // 前置条件同 upload.js：ci.config.json 已配置、上传密钥已就位
 const path = require('path')
