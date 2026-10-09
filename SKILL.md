@@ -76,12 +76,18 @@ If neither pattern matches, **ask the user which type it is** before proceeding.
 
 ## Step 2B — native WeChat Mini Program project → miniprogram-ci
 
-This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload API — no DevTools, no service port, works on CI machines). Templates live in `templates/mp-ci/` of this skill folder.
+This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload API — no DevTools, no service port, works on CI machines). Templates live in `templates/mp-ci/` (JavaScript) and `templates/mp-ci-ts/` (TypeScript) of this skill folder.
 
-1. **Install the dependency**:
-   ```bash
-   npm i -D miniprogram-ci
-   ```
+1. **Detect the project's script language**, then install dependencies accordingly:
+   - **TypeScript project** — `typescript` in dependencies/devDependencies, or a `tsconfig.json` at the root → use the `templates/mp-ci-ts/` templates and install both packages:
+     ```bash
+     npm i -D miniprogram-ci tsx
+     ```
+   - **JavaScript project, `"type": "module"`** — the CJS-style `.js` templates would break (no `require`); copy the JS templates but rename them to `.cjs` (`scripts/ci-project.cjs`, `scripts/upload.cjs`, `scripts/preview.cjs`) and point the npm scripts at the `.cjs` files.
+   - **JavaScript project, CommonJS (default)** — use `templates/mp-ci/` as-is:
+     ```bash
+     npm i -D miniprogram-ci
+     ```
 
 2. **Create `ci.config.json` in the project root** from `templates/mp-ci/ci.config.json` (copy it verbatim, then fill in):
    - `appid` — read it from the project's `project.config.json` (`appid` field).
@@ -91,16 +97,18 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
 
 3. **Compiler plugins (TS / Less / Sass projects)**: `miniprogram-ci` does NOT auto-enable the `useCompilerPlugins` from `project.config.json` — it must be passed via the `setting` option. The generated scripts handle this automatically (they read `project.config.json` from `projectPath` or the project root and pass `useCompilerPlugins` through). Only if detection fails should you add an explicit `setting` to `ci.config.json`.
 
-4. **Generate the three scripts** into `<project>/scripts/` by copying the templates:
-   - `scripts/ci-project.js` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3).
-   - `scripts/upload.js` — `node scripts/upload.js [版本号] [备注]`; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
-   - `scripts/preview.js` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
+4. **Generate the three scripts** into `<project>/scripts/` from the language-matched templates (step 1):
+   - TS variant: `ci-project.ts` / `upload.ts` / `preview.ts`, run with `tsx`.
+   - JS variant: `ci-project.js` / `upload.js` / `preview.js`, run with `node` (or `.cjs` for ESM projects).
+   - `ci-project.*` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3).
+   - `upload.*` — `[版本号] [备注]` args; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
+   - `preview.*` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
 
 5. **Tell the user to obtain the upload key** (same key as the uni-app WeChat path):
    - Open https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传 → 小程序代码上传密钥，下载密钥文件，放在项目根目录，然后修改 `ci.config.json` 中 `privateKeyPath` 指向该文件。
    - ⚠️ Remind the user: the private key is a secret — never commit it to git (suggest adding it to `.gitignore`).
 
-6. **Add npm scripts to `package.json`** (merge into existing `scripts`):
+6. **Add npm scripts to `package.json`** (merge into existing `scripts`; match the file extensions from step 4):
    ```json
    {
      "scripts": {
@@ -109,6 +117,7 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
      }
    }
    ```
+   For the TS variant use `"upload": "tsx scripts/upload.ts"` / `"preview": "tsx scripts/preview.ts"`; for the ESM-JS variant use the `.cjs` file names.
 
 7. **Tell the user the prerequisites** (they are one-time, manual):
    - 小程序后台「开发管理 → 开发工具」已开启代码上传；若开启了 IP 白名单，需把本机 IP 加入白名单。

@@ -13,7 +13,7 @@ Mini-program CI upload skill for AI coding agents（小程序 CI 上传 Skill）
 | 项目类型 | 工具 | 说明 |
 |---|---|---|
 | uni-app 项目 | `uni-mini-ci` | 生成 `.minicirc` 配置 + `upload:mp-*` npm 脚本 |
-| 微信小程序原生项目 | `miniprogram-ci` | 生成 `ci.config.json` 配置 + `scripts/upload.js`、`scripts/preview.js`（SDK 无头上传） |
+| 微信小程序原生项目 | `miniprogram-ci` | 生成 `ci.config.json` + 按项目语言（TS/JS/ESM）生成 `scripts/` 上传与预览脚本（SDK 无头上传） |
 
 **识别规则**
 
@@ -46,11 +46,15 @@ mini-upload/
 └── templates/
     ├── uni/
     │   └── .minicirc         # uni-mini-ci 配置模板（weixin / alipay / dd）
-    └── mp-ci/
-        ├── ci.config.json    # miniprogram-ci 配置模板（appid / privateKeyPath / projectPath）
-        ├── ci-project.js     # 共享辅助：加载配置并创建 miniprogram-ci Project 实例
-        ├── upload.js         # 上传脚本：node scripts/upload.js [版本号] [备注]
-        └── preview.js        # 预览二维码脚本：输出到 qrcodes/，按时间戳命名
+    ├── mp-ci/                # 原生微信小程序 JS 模板（CommonJS）
+    │   ├── ci.config.json    # miniprogram-ci 配置模板（appid / privateKeyPath / projectPath）
+    │   ├── ci-project.js     # 共享辅助：加载配置并创建 miniprogram-ci Project 实例
+    │   ├── upload.js         # 上传脚本：node scripts/upload.js [版本号] [备注]
+    │   └── preview.js        # 预览二维码脚本：输出到 qrcodes/，按时间戳命名
+    └── mp-ci-ts/             # 原生微信小程序 TS 模板（tsx 运行，ESM 风格）
+        ├── ci-project.ts
+        ├── upload.ts
+        └── preview.ts
 ```
 
 ## 安装（作为 Agent Skill）
@@ -82,23 +86,27 @@ cp -r mini-upload ~/.agents/skills/
 
 无需安装/登录微信开发者工具，无需开启服务端口，可在纯 CI 环境运行。
 
-1. 安装依赖：`npm i -D miniprogram-ci`
-2. 复制 `templates/mp-ci/ci.config.json` 到项目根目录，填写：
+**按项目语言选择模板**：
+
+| 项目情况 | 模板 | 依赖 | npm scripts |
+|---|---|---|---|
+| TypeScript 项目（含 `typescript` 依赖或 `tsconfig.json`） | `templates/mp-ci-ts/` | `npm i -D miniprogram-ci tsx` | `tsx scripts/upload.ts` / `tsx scripts/preview.ts` |
+| JS + `"type": "module"` | `templates/mp-ci/` 改名 `.cjs` | `npm i -D miniprogram-ci` | `node scripts/upload.cjs` |
+| JS CommonJS（默认） | `templates/mp-ci/` 原样 | `npm i -D miniprogram-ci` | `node scripts/upload.js` |
+
+**配置流程**：
+
+1. 复制 `templates/mp-ci/ci.config.json` 到项目根目录，填写：
    - `appid`：取自 `project.config.json`
    - `projectPath`：含 `app.json` 的代码目录（通常即 `project.config.json` 的 `miniprogramRoot`，根目录项目填 `.`）
    - `privateKeyPath`：先留占位，见第 3 步
-3. 复制 `templates/mp-ci/` 的三个 js 脚本到项目 `scripts/` 目录
-4. 用户前往 https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传，下载上传密钥放入项目根目录，并修改 `ci.config.json` 的 `privateKeyPath`（密钥文件不要提交 git）
-5. 在 `package.json` 的 `scripts` 中合并：
+2. 按上表复制对应语言的三个脚本到项目 `scripts/` 目录
+3. 用户前往 https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传，下载上传密钥放入项目根目录，并修改 `ci.config.json` 的 `privateKeyPath`（密钥文件不要提交 git）
+4. 在 `package.json` 的 `scripts` 中合并对应语言的命令（上表）
 
-```json
-{
-  "upload": "node scripts/upload.js",
-  "preview": "node scripts/preview.js"
-}
-```
+**前置条件**（一次性、手动）：小程序后台「开发管理 → 开发工具」已开启代码上传；若开启 IP 白名单需加入本机 IP。
 
-6. 前置条件（一次性、手动）：小程序后台「开发管理 → 开发工具」已开启代码上传；若开启 IP 白名单需加入本机 IP。
+> TS / Less / Sass 项目无需额外配置：脚本会自动读取 `project.config.json` 的 `useCompilerPlugins` 并传给 miniprogram-ci。
 
 ## 备注
 
