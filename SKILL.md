@@ -44,7 +44,8 @@ If neither pattern matches, **ask the user which type it is** before proceeding.
   - Exists and still has template placeholders → fill in only the missing/placeholder fields, keep everything else.
   - Exists and is fully configured → leave it untouched, tell the user it's already configured.
   - Doesn't exist → create from the template.
-- Same for scripts (`scripts/*.js`): if a script already exists, diff against the template; only rewrite when missing or genuinely broken, and say so.
+- Same for scripts (`scripts/*`): if a script already exists, diff against the template; only rewrite when missing or genuinely broken, and say so.
+- **Language mismatch**: if the existing scripts' language (JS vs TS) differs from the project's language, do NOT migrate on your own — a working script is never "broken". Only migrate when the user explicitly asks (e.g. "换成 ts 脚本"): replace the scripts with the matching variant, update the npm scripts accordingly (`node scripts/upload.js` → `tsx scripts/upload.ts`), install `tsx` if switching to TS, and re-run an upload/preview to verify.
 - Same for `package.json` `scripts`: only add entries that are missing; never modify or delete existing ones.
 - At the end of initialization, summarize what was created vs. what was kept as-is.
 
