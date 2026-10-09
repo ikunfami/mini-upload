@@ -2,18 +2,19 @@
 // 由 tsx 运行（npm i -D tsx），不做类型检查，类型标注仅为阅读辅助
 import path from 'node:path'
 import fs from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import * as ciModule from 'miniprogram-ci'
 
 // miniprogram-ci 是 CJS 包，默认导出在 tsx/esbuild 互操作下可能取不到，做兜底
 const ci: any = (ciModule as any).default || ciModule
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+// npm scripts 始终在项目根目录运行，用 cwd 作为项目根；
+// 不用 import.meta/__dirname，避免小程序项目 tsconfig（module: commonjs）下的类型报错
+const ROOT = process.cwd()
 
 export function loadConfig() {
   const configPath = path.join(ROOT, 'ci.config.json')
   if (!fs.existsSync(configPath)) {
-    console.error('[mini-ci] 未找到 ci.config.json，请先按模板创建并配置 appid / privateKeyPath / projectPath')
+    console.error('[mini-ci] 未找到 ci.config.json，请在项目根目录运行，或先按模板创建并配置 appid / privateKeyPath / projectPath')
     process.exit(1)
   }
 

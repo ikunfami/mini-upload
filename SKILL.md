@@ -101,7 +101,7 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
 4. **Generate the three scripts** into `<project>/scripts/` from the language-matched templates (step 1):
    - TS variant: `ci-project.ts` / `upload.ts` / `preview.ts`, run with `tsx`.
    - JS variant: `ci-project.js` / `upload.js` / `preview.js`, run with `node` (or `.cjs` for ESM projects).
-   - `ci-project.*` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3).
+   - `scripts/ci-project.*` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3). The TS variant uses `process.cwd()` as the project root (npm scripts always run from the root) instead of `import.meta.url`, so it type-checks cleanly under a mini-program tsconfig (`module: commonjs`) — no `import.meta` errors in the editor.
    - `upload.*` — `[版本号] [备注]` args; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
    - `preview.*` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
 
