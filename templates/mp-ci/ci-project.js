@@ -52,4 +52,31 @@ function createProject(config) {
   })
 }
 
-module.exports = { ROOT, ci, loadConfig, createProject }
+// 解析编译设置：ci.config.json 的 setting 优先，
+// 否则自动探测 project.config.json 的 useCompilerPlugins（如 ["typescript", "less"]），
+// 保证 miniprogram-ci 启用与开发者工具一致的编译插件
+function resolveSetting(config) {
+  if (config.setting && typeof config.setting === 'object') {
+    return config.setting
+  }
+
+  const candidates = [
+    path.join(config.projectPath, 'project.config.json'),
+    path.join(ROOT, 'project.config.json'),
+  ]
+  for (const file of candidates) {
+    if (!fs.existsSync(file)) continue
+    try {
+      const projectConfig = JSON.parse(fs.readFileSync(file, 'utf8'))
+      if (Array.isArray(projectConfig.useCompilerPlugins) && projectConfig.useCompilerPlugins.length > 0) {
+        console.log(`[mini-ci] 检测到编译插件: ${projectConfig.useCompilerPlugins.join(', ')}（来自 ${path.relative(ROOT, file)}）`)
+        return { useCompilerPlugins: projectConfig.useCompilerPlugins }
+      }
+    } catch (err) {
+      console.error(`[mini-ci] ${path.relative(ROOT, file)} 解析失败（忽略，继续）:`, err.message)
+    }
+  }
+  return {}
+}
+
+module.exports = { ROOT, ci, loadConfig, createProject, resolveSetting }

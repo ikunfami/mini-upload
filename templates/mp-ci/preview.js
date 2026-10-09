@@ -4,7 +4,7 @@
 // 前置条件同 upload.js：ci.config.json 已配置、上传密钥已就位
 const path = require('path')
 const fs = require('fs')
-const { ROOT, ci, loadConfig, createProject } = require('./ci-project')
+const { ROOT, ci, loadConfig, createProject, resolveSetting } = require('./ci-project')
 
 const config = loadConfig()
 
@@ -20,7 +20,7 @@ const QR_PATH = path.join(QR_DIR, `preview-${stamp}.jpg`)
 
 async function main() {
   const project = createProject(config)
-  await ci.preview({ project, qrcodeFormat: 'image', qrcodeOutputDest: QR_PATH })
+  await ci.preview({ project, setting: resolveSetting(config), qrcodeFormat: 'image', qrcodeOutputDest: QR_PATH })
   console.log(`[preview] 二维码已生成: ${path.relative(ROOT, QR_PATH)}`)
 }
 

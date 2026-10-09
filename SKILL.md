@@ -86,18 +86,21 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
 2. **Create `ci.config.json` in the project root** from `templates/mp-ci/ci.config.json` (copy it verbatim, then fill in):
    - `appid` — read it from the project's `project.config.json` (`appid` field).
    - `projectPath` — the directory containing `app.json` (usually the `miniprogramRoot` from `project.config.json`; use `.` if the project root IS the code dir).
-   - `privateKeyPath` — placeholder for now, see step 3.
+   - `privateKeyPath` — placeholder for now, see step 5.
+   - Optional `setting` — compile options passed to `ci.upload` / `ci.preview` (e.g. `{ "es6": true }`). You usually don't need it: if absent, the scripts auto-detect `useCompilerPlugins` from `project.config.json`, so TS / Less / Sass projects work out of the box.
 
-3. **Generate the three scripts** into `<project>/scripts/` by copying the templates:
-   - `scripts/ci-project.js` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values) and creates the `miniprogram-ci` Project instance.
+3. **Compiler plugins (TS / Less / Sass projects)**: `miniprogram-ci` does NOT auto-enable the `useCompilerPlugins` from `project.config.json` — it must be passed via the `setting` option. The generated scripts handle this automatically (they read `project.config.json` from `projectPath` or the project root and pass `useCompilerPlugins` through). Only if detection fails should you add an explicit `setting` to `ci.config.json`.
+
+4. **Generate the three scripts** into `<project>/scripts/` by copying the templates:
+   - `scripts/ci-project.js` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values), creates the `miniprogram-ci` Project instance, and resolves the compile `setting` (step 3).
    - `scripts/upload.js` — `node scripts/upload.js [版本号] [备注]`; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
    - `scripts/preview.js` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
 
-4. **Tell the user to obtain the upload key** (same key as the uni-app WeChat path):
+5. **Tell the user to obtain the upload key** (same key as the uni-app WeChat path):
    - Open https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传 → 小程序代码上传密钥，下载密钥文件，放在项目根目录，然后修改 `ci.config.json` 中 `privateKeyPath` 指向该文件。
    - ⚠️ Remind the user: the private key is a secret — never commit it to git (suggest adding it to `.gitignore`).
 
-5. **Add npm scripts to `package.json`** (merge into existing `scripts`):
+6. **Add npm scripts to `package.json`** (merge into existing `scripts`):
    ```json
    {
      "scripts": {
@@ -107,7 +110,7 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
    }
    ```
 
-6. **Tell the user the prerequisites** (they are one-time, manual):
+7. **Tell the user the prerequisites** (they are one-time, manual):
    - 小程序后台「开发管理 → 开发工具」已开启代码上传；若开启了 IP 白名单，需把本机 IP 加入白名单。
    - 无需微信开发者工具、无需登录、无需开启服务端口（这是 SDK 方案与开发者工具 CLI 方案的区别）。
 
