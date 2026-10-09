@@ -60,7 +60,8 @@ export function createProject(config: any) {
 
 // 解析编译设置：ci.config.json 的 setting 优先，
 // 否则自动探测 project.config.json 的 useCompilerPlugins（如 ["typescript", "less"]），
-// 保证 miniprogram-ci 启用与开发者工具一致的编译插件
+// 保证 miniprogram-ci 启用与开发者工具一致的编译插件。
+// 注意：useCompilerPlugins 可能位于 project.config.json 顶层，也可能嵌套在 setting 字段内，两者都要查
 export function resolveSetting(config: any) {
   if (config.setting && typeof config.setting === 'object') {
     return config.setting
@@ -74,9 +75,12 @@ export function resolveSetting(config: any) {
     if (!fs.existsSync(file)) continue
     try {
       const projectConfig = JSON.parse(fs.readFileSync(file, 'utf8'))
-      if (Array.isArray(projectConfig.useCompilerPlugins) && projectConfig.useCompilerPlugins.length > 0) {
-        console.log(`[mini-ci] 检测到编译插件: ${projectConfig.useCompilerPlugins.join(', ')}（来自 ${path.relative(ROOT, file)}）`)
-        return { useCompilerPlugins: projectConfig.useCompilerPlugins }
+      const plugins = Array.isArray(projectConfig.useCompilerPlugins)
+        ? projectConfig.useCompilerPlugins
+        : projectConfig.setting && projectConfig.setting.useCompilerPlugins
+      if (Array.isArray(plugins) && plugins.length > 0) {
+        console.log(`[mini-ci] 检测到编译插件: ${plugins.join(', ')}（来自 ${path.relative(ROOT, file)}）`)
+        return { useCompilerPlugins: plugins }
       }
     } catch (err: any) {
       console.error(`[mini-ci] ${path.relative(ROOT, file)} 解析失败（忽略，继续）:`, err.message)

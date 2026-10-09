@@ -98,7 +98,7 @@ cp -r mini-upload ~/.agents/skills/
 
 1. 复制 `templates/mp-ci/ci.config.json` 到项目根目录，填写：
    - `appid`：取自 `project.config.json`
-   - `projectPath`：含 `app.json` 的代码目录（通常即 `project.config.json` 的 `miniprogramRoot`，根目录项目填 `.`）
+   - `projectPath`：填 `"."`（项目根目录，即 `project.config.json` 所在处）。miniprogram-ci 会自动读取其中的 `miniprogramRoot`（代码目录）和 `useCompilerPlugins`（编译插件），不要填 `miniprogram/` 子目录——否则 TS 项目会报 `could not find pages/xxx/xxx.js`
    - `privateKeyPath`：先留占位，见第 3 步
 2. 按上表复制对应语言的三个脚本到项目 `scripts/` 目录
 3. 用户前往 https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传，下载上传密钥放入项目根目录，并修改 `ci.config.json` 的 `privateKeyPath`（密钥文件不要提交 git）

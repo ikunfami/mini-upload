@@ -91,7 +91,7 @@ This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload
 
 2. **Create `ci.config.json` in the project root** from `templates/mp-ci/ci.config.json` (copy it verbatim, then fill in):
    - `appid` — read it from the project's `project.config.json` (`appid` field).
-   - `projectPath` — the directory containing `app.json` (usually the `miniprogramRoot` from `project.config.json`; use `.` if the project root IS the code dir).
+   - `projectPath` — the directory **containing `project.config.json`** (usually the project root — just use `.`). `miniprogram-ci` reads `miniprogramRoot` (the actual code dir) and `setting.useCompilerPlugins` from it. Do NOT point this at the `miniprogramRoot` subdir itself: the file-existence checks and TS/Less plugin detection would then fall back to defaults and fail (e.g. `could not find pages/xxx/xxx.js` in TS projects).
    - `privateKeyPath` — placeholder for now, see step 5.
    - Optional `setting` — compile options passed to `ci.upload` / `ci.preview` (e.g. `{ "es6": true }`). You usually don't need it: if absent, the scripts auto-detect `useCompilerPlugins` from `project.config.json`, so TS / Less / Sass projects work out of the box.
 
