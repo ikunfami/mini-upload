@@ -52,19 +52,28 @@ If neither pattern matches, **ask the user which type it is** before proceeding.
 
 ## Step 2B — native WeChat Mini Program project → miniprogram-ci
 
-This path uses the **WeChat DevTools CLI** (`cli.js upload / preview`), driven by Node scripts. Install `miniprogram-ci` as the dev dependency and generate the scripts from the templates in `templates/mp-ci/` of this skill folder.
+This path uses the **`miniprogram-ci` SDK** (headless upload via WeChat's upload API — no DevTools, no service port, works on CI machines). Templates live in `templates/mp-ci/` of this skill folder.
 
 1. **Install the dependency**:
    ```bash
    npm i -D miniprogram-ci
    ```
 
-2. **Generate the three scripts** into `<project>/scripts/` by copying the templates (do not hardcode machine-specific paths):
-   - `scripts/devtools-path.js` — resolves the WeChat DevTools install dir: env var `WX_DEVTOOLS_DIR` first, then common install locations. Tell the user they can set `WX_DEVTOOLS_DIR` if DevTools is installed elsewhere.
-   - `scripts/upload.js` — `node scripts/upload.js [版本号] [备注]`, defaults version from `package.json` version.
+2. **Create `ci.config.json` in the project root** from `templates/mp-ci/ci.config.json` (copy it verbatim, then fill in):
+   - `appid` — read it from the project's `project.config.json` (`appid` field).
+   - `projectPath` — the directory containing `app.json` (usually the `miniprogramRoot` from `project.config.json`; use `.` if the project root IS the code dir).
+   - `privateKeyPath` — placeholder for now, see step 3.
+
+3. **Generate the three scripts** into `<project>/scripts/` by copying the templates:
+   - `scripts/ci-project.js` — shared helper: loads `ci.config.json` (with clear error messages for missing/placeholder values) and creates the `miniprogram-ci` Project instance.
+   - `scripts/upload.js` — `node scripts/upload.js [版本号] [备注]`; version/desc default to `ci.config.json`, then `package.json` version. First arg matching `x.y.z` is the version, everything after is the desc; a single non-version arg is the desc.
    - `scripts/preview.js` — generates a preview QR code into `qrcodes/`, timestamped so history is never overwritten.
 
-3. **Add npm scripts to `package.json`** (merge into existing `scripts`):
+4. **Tell the user to obtain the upload key** (same key as the uni-app WeChat path):
+   - Open https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传 → 小程序代码上传密钥，下载密钥文件，放在项目根目录，然后修改 `ci.config.json` 中 `privateKeyPath` 指向该文件。
+   - ⚠️ Remind the user: the private key is a secret — never commit it to git (suggest adding it to `.gitignore`).
+
+5. **Add npm scripts to `package.json`** (merge into existing `scripts`):
    ```json
    {
      "scripts": {
@@ -74,9 +83,9 @@ This path uses the **WeChat DevTools CLI** (`cli.js upload / preview`), driven b
    }
    ```
 
-4. **Tell the user the prerequisites** (they are one-time, manual):
-   - 微信开发者工具「设置 → 安全设置 → 服务端口」已开启，且工具已登录。
+6. **Tell the user the prerequisites** (they are one-time, manual):
    - 小程序后台「开发管理 → 开发工具」已开启代码上传；若开启了 IP 白名单，需把本机 IP 加入白名单。
+   - 无需微信开发者工具、无需登录、无需开启服务端口（这是 SDK 方案与开发者工具 CLI 方案的区别）。
 
 ## Running upload / preview (执行模式)
 
@@ -106,7 +115,7 @@ Examples:
 
 How the description is passed depends on the project type:
 
-- **Native (miniprogram-ci)**: pass fragments as separate args to the upload script — `npm run upload -- 1.0.2 "注册功能"`. The script defaults the version to `package.json` version when only a description is given; with only a version: `npm run upload -- 1.0.2`.
+- **Native (miniprogram-ci)**: pass fragments as separate args to the upload script — `npm run upload -- 1.0.2 "注册功能"`. The script defaults version/desc to `ci.config.json`（version 缺失时回退到 `package.json` version）when not given on the command line.
 - **uni-app (uni-mini-ci)**: version and desc come from `.minicirc` — before running, **update `.minicirc` 的 `version` / `desc` 字段为用户给出的值**（用户没给的字段保持原样），then run the platform upload command.
 
 **Always check `package.json` first** — read the project's `package.json` `scripts` section before running anything:
@@ -122,17 +131,17 @@ How the description is passed depends on the project type:
 
 **Before running, also confirm the prerequisites are met** (prompt the user if likely unmet, but don't block on it):
 - uni-app: `.minicirc` exists and the private key file it references is present.
-- Native: WeChat DevTools installed (or `WX_DEVTOOLS_DIR` set), 服务端口已开启、已登录、后台代码上传已开启。
+- Native: `ci.config.json` exists, its `privateKeyPath` file is present, and 小程序后台代码上传已开启（IP 白名单含本机）。
 
 After a successful run, report the result briefly (version uploaded / QR code path). If the command fails, show the key error output and suggest fixes (missing key, DevTools not reachable, IP whitelist, etc.).
 
 ## Verification
 
 - For uni-app: after the user has placed the private key and filled `.minicirc`, suggest running e.g. `npm run upload:mp-weixin` to verify. Do not run it yourself if the key/config is not ready.
-- For native projects: run `npm run preview` (or `node scripts/preview.js`) to verify the DevTools CLI is reachable; it should produce a QR code under `qrcodes/`.
+- For native projects: run `npm run preview` (or `node scripts/preview.js`) to verify; it should produce a QR code under `qrcodes/`. The scripts exit with clear messages if `ci.config.json` or the private key is missing.
 
 ## Notes
 
 - Always merge into the existing `package.json` `scripts` — never overwrite unrelated entries.
-- `.minicirc` and the private key file must not be committed; suggest adding them to `.gitignore` when missing.
-- The generated scripts must stay machine-agnostic (no absolute personal paths). Machine-specific locations go through the `WX_DEVTOOLS_DIR` env variable.
+- `.minicirc`, `ci.config.json` and the private key file must not be committed; suggest adding them to `.gitignore` when missing. Also suggest ignoring `qrcodes/`.
+- The generated scripts stay machine-agnostic: everything machine-specific (appid, key path, code path) lives in `ci.config.json` / `.minicirc`, never in the scripts.

@@ -1,0 +1,7 @@
+{
+  "appid": "你的微信小程序AppID",
+  "privateKeyPath": "上传密钥文件相对项目根目录的路径，例如 private.wx0000000000000000.key",
+  "projectPath": "小程序代码目录（含 app.json 的目录）相对项目根目录的路径，例如 miniprogram，或根目录项目填 .",
+  "version": "0.0.1",
+  "desc": "版本描述"
+}

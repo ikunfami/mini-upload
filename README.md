@@ -13,7 +13,7 @@ Mini-program CI upload skill for AI coding agents（小程序 CI 上传 Skill）
 | 项目类型 | 工具 | 说明 |
 |---|---|---|
 | uni-app 项目 | `uni-mini-ci` | 生成 `.minicirc` 配置 + `upload:mp-*` npm 脚本 |
-| 微信小程序原生项目 | `miniprogram-ci` | 生成 `scripts/upload.js`、`scripts/preview.js`、`scripts/devtools-path.js`，调用微信开发者工具 CLI |
+| 微信小程序原生项目 | `miniprogram-ci` | 生成 `ci.config.json` 配置 + `scripts/upload.js`、`scripts/preview.js`（SDK 无头上传） |
 
 **识别规则**
 
@@ -47,7 +47,8 @@ mini-upload/
     ├── uni/
     │   └── .minicirc         # uni-mini-ci 配置模板（weixin / alipay / dd）
     └── mp-ci/
-        ├── devtools-path.js  # 微信开发者工具目录解析（WX_DEVTOOLS_DIR 环境变量 + 常见路径探测）
+        ├── ci.config.json    # miniprogram-ci 配置模板（appid / privateKeyPath / projectPath）
+        ├── ci-project.js     # 共享辅助：加载配置并创建 miniprogram-ci Project 实例
         ├── upload.js         # 上传脚本：node scripts/upload.js [版本号] [备注]
         └── preview.js        # 预览二维码脚本：输出到 qrcodes/，按时间戳命名
 ```
@@ -77,11 +78,18 @@ cp -r mini-upload ~/.agents/skills/
 }
 ```
 
-### 原生微信小程序 → miniprogram-ci
+### 原生微信小程序 → miniprogram-ci（SDK 无头上传）
+
+无需安装/登录微信开发者工具，无需开启服务端口，可在纯 CI 环境运行。
 
 1. 安装依赖：`npm i -D miniprogram-ci`
-2. 复制 `templates/mp-ci/` 三个脚本到项目 `scripts/` 目录
-3. 在 `package.json` 的 `scripts` 中合并：
+2. 复制 `templates/mp-ci/ci.config.json` 到项目根目录，填写：
+   - `appid`：取自 `project.config.json`
+   - `projectPath`：含 `app.json` 的代码目录（通常即 `project.config.json` 的 `miniprogramRoot`，根目录项目填 `.`）
+   - `privateKeyPath`：先留占位，见第 3 步
+3. 复制 `templates/mp-ci/` 的三个 js 脚本到项目 `scripts/` 目录
+4. 用户前往 https://mp.weixin.qq.com/ → 管理 → 开发管理 → 小程序代码上传，下载上传密钥放入项目根目录，并修改 `ci.config.json` 的 `privateKeyPath`（密钥文件不要提交 git）
+5. 在 `package.json` 的 `scripts` 中合并：
 
 ```json
 {
@@ -90,13 +98,10 @@ cp -r mini-upload ~/.agents/skills/
 }
 ```
 
-4. 前置条件（一次性、手动）：
-   - 微信开发者工具「设置 → 安全设置 → 服务端口」已开启，且已登录
-   - 小程序后台「开发管理 → 开发工具」已开启代码上传；若开启 IP 白名单需加入本机 IP
-   - 开发者工具非标准安装位置时，设置环境变量 `WX_DEVTOOLS_DIR` 指向安装目录
+6. 前置条件（一次性、手动）：小程序后台「开发管理 → 开发工具」已开启代码上传；若开启 IP 白名单需加入本机 IP。
 
 ## 备注
 
-- 所有脚本保持机器无关：不写死绝对路径，机器差异通过 `WX_DEVTOOLS_DIR` 环境变量适配
+- 所有脚本保持机器无关：机器相关配置（appid、密钥路径、代码目录）全部放在 `ci.config.json` / `.minicirc` 中，脚本内不写死任何路径
 - `package.json` 的 `scripts` 只合并、不覆盖已有条目
-- `.minicirc` 与私钥文件属于敏感信息，建议加入 `.gitignore`
+- `.minicirc`、`ci.config.json` 与私钥文件属于敏感信息，建议加入 `.gitignore`；`qrcodes/` 也建议忽略

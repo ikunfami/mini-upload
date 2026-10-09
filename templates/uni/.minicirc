@@ -14,7 +14,7 @@
   "dd": {
     "appid": "钉钉开发者后台的 MiniAppId",
     "token": "钉钉开发者后台的 API Token",
-    "projectPath": "钉钉小程序产物目录，例如 dist/build/mp-alipay",
+    "projectPath": "钉钉小程序产物目录，例如 dist/build/mp-dingtalk",
     "autoincrement": true
   },
   "version": "0.0.1",
