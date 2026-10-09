@@ -57,7 +57,8 @@ function createProject(config) {
 // 保证 miniprogram-ci 启用与开发者工具一致的编译插件。
 // 注意：useCompilerPlugins 可能位于 project.config.json 顶层，也可能嵌套在 setting 字段内，两者都要查
 function resolveSetting(config) {
-  if (config.setting && typeof config.setting === 'object') {
+  // 仅当 setting 非空对象时短路；空对象（{}）视为未配置，继续自动探测
+  if (config.setting && typeof config.setting === 'object' && Object.keys(config.setting).length > 0) {
     return config.setting
   }
 
