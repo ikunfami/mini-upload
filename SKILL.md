@@ -1,12 +1,24 @@
 ---
 name: mini-upload
 author: ikunfami
-description: "Configure mini-program CI upload for a project: auto-detect uni-app vs native WeChat Mini Program, install the right CI dependency (uni-mini-ci / miniprogram-ci), and generate upload scripts/config. Also runs the upload / preview on request. 为项目配置并执行小程序 CI 上传：自动识别 uniapp / 微信小程序原生项目，安装 uni-mini-ci 或 miniprogram-ci 依赖并生成上传脚本与配置。Use when the user asks to '配置小程序上传 / 小程序 CI / minici / miniprogram-ci / uni-mini-ci / 上传代码到小程序后台 / 上传 / 发布 / 发版 / 生成二维码'."
+description: "Configure mini-program CI upload for a project: auto-detect uni-app vs native WeChat Mini Program, install the right CI dependency (uni-mini-ci / miniprogram-ci), and generate upload scripts/config. Also runs the upload / preview on request. 为项目配置并执行小程序 CI 上传：自动识别 uniapp / 微信小程序原生项目，安装 uni-mini-ci 或 miniprogram-ci 依赖并生成上传脚本与配置。Use when the user asks to '配置小程序上传 / 小程序 CI 上传 / minici / miniprogram-ci / uni-mini-ci / 上传小程序代码 / 小程序发版 / 小程序代码上传 / 生成小程序预览二维码'."
 ---
 
 # Mini-Program CI Upload Setup (mini-upload)
 
 This skill sets up CI upload of mini-program code for a project. It picks the right tool based on the project type, installs it into `devDependencies`, and generates the required config / scripts.
+
+## Mode decision (先判断模式)
+
+Read the user's intent first, then jump to the matching section — don't read everything before acting:
+
+| 用户意图 | 走哪个部分 |
+|---|---|
+| 想配置 / 搭建小程序上传（如"配置小程序上传"、"接入 miniprogram-ci"、"初始化 minicli"） | Step 1 → Step 2A / 2B（初始化） |
+| 想直接上传 / 发版 / 生成预览二维码（如"发版，1.0.2，注册功能"） | Running upload / preview（执行模式） |
+| 两者都不是（普通的"发布 npm 包"、"上传图片"等） | 本 skill 不适用，不要触发 |
+
+Ambiguous cases: if the user says a bare word like "发版" / "上传" in a project that is clearly a mini-program project (or already has upload scripts / `.minicirc` / `ci.config.json`), treat it as 执行模式; otherwise ask what they mean before doing anything.
 
 ## Step 1 — Detect project type
 
@@ -23,6 +35,18 @@ Inspect the target project (its `package.json`, directory layout) and classify i
 - No `@dcloudio` dependencies
 
 If neither pattern matches, **ask the user which type it is** before proceeding.
+
+## Step 2 common rules (初始化通用规则 — applies to both 2A and 2B)
+
+**Idempotency — initialization must be safe to re-run:**
+
+- **Never overwrite user-edited config.** Before writing `.minicirc` / `ci.config.json`, check whether it already exists:
+  - Exists and still has template placeholders → fill in only the missing/placeholder fields, keep everything else.
+  - Exists and is fully configured → leave it untouched, tell the user it's already configured.
+  - Doesn't exist → create from the template.
+- Same for scripts (`scripts/*.js`): if a script already exists, diff against the template; only rewrite when missing or genuinely broken, and say so.
+- Same for `package.json` `scripts`: only add entries that are missing; never modify or delete existing ones.
+- At the end of initialization, summarize what was created vs. what was kept as-is.
 
 ## Step 2A — uni-app project → uni-mini-ci
 
